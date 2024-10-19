@@ -3,7 +3,7 @@
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-source /epyc/ssd/users/stevengs/opt_lsst/bin/opt_lsst.sh
+source ${OPT_LSST_DIR}/bin/opt_lsst.sh
 
 pathadd() {
     if [ -d "$1" ] && [[ ":$PATH:" != *":$1:"* ]]; then
