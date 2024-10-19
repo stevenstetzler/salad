@@ -1,0 +1,16 @@
+[build-system]
+requires = ['setuptools']
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "salad"
+version = "0.0.1"
+authors = [{name="Steven Stetzler", email="stevengs@uw.edu" }]
+description = "Find faint asteroids"
+readme = "README.md"
+
+[project.scripts]
+salad = "salad.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
