@@ -2,7 +2,7 @@ import numpy as np
 import astropy.table
 
 class Line(object):
-    alpha = None 
+    alpha = None
     beta = None
     offset = 0
     

@@ -3,17 +3,24 @@ import astropy.units as u
 from .serialize import Serializable
 
 class SearchDirections(Serializable):
-    def __init__(self, velocity_range, angle_range, dx, dt):
+    def __init__(self, velocity_range, angle_range, dx, dt, b=None):
         """
         specify two ranges and units
         """
-        self.velocity_range = velocity_range
-        # self.angle_range = angle_range
-        # fit into [-pi, pi]
-        self.angle_range = [
-            (angle_range[0] + np.pi*u.rad) % (2 * np.pi * u.rad) - np.pi * u.rad,
-            (angle_range[1] + np.pi*u.rad) % (2 * np.pi * u.rad) - np.pi * u.rad
-        ]
+        if b is not None:
+            self._b = b
+            _v = ((b**2).sum(axis=1)**0.5)
+            _phi = np.arctan2(b[:, 1], b[:, 0]) # this provides values in [-pi, pi]
+            self.velocity_range = [_v.min(), _v.max()] * b.unit
+            self.angle_range = [_phi.min(), _phi.max()] * u.rad
+        else:
+            self.velocity_range = velocity_range
+            # self.angle_range = angle_range
+            # fit into [-pi, pi]
+            self.angle_range = [
+                (angle_range[0] + np.pi*u.rad) % (2 * np.pi * u.rad) - np.pi * u.rad,
+                (angle_range[1] + np.pi*u.rad) % (2 * np.pi * u.rad) - np.pi * u.rad
+            ]
         
         self.dx = dx
         self.dt = dt

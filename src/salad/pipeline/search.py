@@ -26,9 +26,10 @@ def main():
     parser.add_argument("--snrs", nargs="+", type=float, default=[5.0, 4.5, 4.0, 3.5, 3.0])
     parser.add_argument("--datasetType", default="differenceExp")
     parser.add_argument("--velocity", nargs=2, type=float, default=[0.1, 0.5])
-    parser.add_argument("--angle", nargs=1, type=float, default=[120, 240])
+    parser.add_argument("--angle", nargs=2, type=float, default=[120, 240])
     parser.add_argument("--dx", type=float, default=10)
-    parser.add_argument("--vote-threshold", type=int, default=25)
+    parser.add_argument("--cluster-threshold", type=int, default=25)
+    parser.add_argument("--threshold-type", type=str, default='votes')
     parser.add_argument("--filter-velocity", nargs=2, type=float, default=None)
     parser.add_argument("--filter-angle", nargs=2, type=float, default=None)
     parser.add_argument("--min-points", type=int, default=15)
@@ -76,7 +77,7 @@ def main():
         clusters = File(f"{work_dir}/clusters.pkl")
         future, clusters = launch_for_outputs(
             find_clusters,
-            args.vote_threshold,
+            args.cluster_threshold,
             inputs=hough, 
             outputs=[clusters],
             work_dir=work_dir,

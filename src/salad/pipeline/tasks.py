@@ -132,12 +132,13 @@ def cluster_hough(
 
 def find_clusters(
         threshold,
+        threshold_type='votes',
         inputs=(), outputs=(), 
         stdout=parsl.AUTO_LOGNAME, 
         stderr=parsl.AUTO_LOGNAME, 
         **kwargs
 ):
-    cmd = f""" /bin/time --verbose salad find_clusters {inputs[0]} {outputs[0]} --threshold {threshold}"""
+    cmd = f""" /bin/time --verbose salad find_clusters {inputs[0]} {outputs[0]} --threshold {threshold} --threshold-type {threshold_type} """
     return cmd
 
 def refine(
@@ -166,6 +167,49 @@ def recover(
         **kwargs,                
 ):
     cmd = f""" /bin/time --verbose salad fakes.recover --fakes {inputs[0]} --clusters {inputs[1]} --catalog {inputs[2]} --hough {inputs[3]} {outputs[0]}"""
+    return cmd
+
+def match_fakes_catalog(
+        fakes,
+        catalog,
+        inputs=(), outputs=(), 
+        stdout=parsl.AUTO_LOGNAME, 
+        stderr=parsl.AUTO_LOGNAME, 
+        **kwargs,                
+):
+    cmd = f""" /bin/time --verbose salad fakes.recover {outputs[0]} --action match_catalog --fakes {fakes} --catalog {catalog} """
+    return cmd
+
+def match_fakes_clusters_line(
+        fakes,
+        clusters,
+        inputs=(), outputs=(), 
+        stdout=parsl.AUTO_LOGNAME, 
+        stderr=parsl.AUTO_LOGNAME, 
+        **kwargs,                
+):
+    cmd = f""" /bin/time --verbose salad fakes.recover {outputs[0]} --action match_clusters_line --fakes {fakes} --clusters {clusters} """
+    return cmd
+
+def match_fakes_clusters_points(
+        fakes,
+        clusters,
+        inputs=(), outputs=(), 
+        stdout=parsl.AUTO_LOGNAME, 
+        stderr=parsl.AUTO_LOGNAME, 
+        **kwargs,                
+):
+    cmd = f""" /bin/time --verbose salad fakes.recover {outputs[0]} --action match_clusters_points --fakes {fakes} --clusters {clusters} """
+    return cmd
+
+def fakes_info(
+        fakes,
+        inputs=(), outputs=(), 
+        stdout=parsl.AUTO_LOGNAME, 
+        stderr=parsl.AUTO_LOGNAME, 
+        **kwargs,                
+):
+    cmd = f""" /bin/time --verbose salad fakes.recover {outputs[0]} --action fakes_info --fakes {fakes} """
     return cmd
 
 def detectable_in_catalog(
@@ -341,6 +385,25 @@ def plot(
         **kwargs,                
 ):
     cmd = f"""  /bin/time --verbose salad analysis.plot {inputs[0]} {outputs[0]} --plot-type {plot_type} """
+    return cmd
+
+
+
+def search(
+        images,
+        catalog,
+        dx,
+        velocity,
+        angle,
+        threshold,
+        threshold_type,
+        inputs=(), 
+        outputs=(), 
+        stdout=parsl.AUTO_LOGNAME, 
+        stderr=parsl.AUTO_LOGNAME, 
+        **kwargs,                
+):
+    cmd = f"""  /bin/time --verbose salad search --images {images} --catalog {catalog} --dx {dx} --velocity {velocity[0]} {velocity[1]} --angle {angle[0]} {angle[1]} --threshold {threshold} --threshold-type {threshold_type} --output-clusters {outputs[0]} --output-gathered {outputs[1]} """
     return cmd
 
 

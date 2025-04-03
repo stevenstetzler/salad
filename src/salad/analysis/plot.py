@@ -472,7 +472,11 @@ def main():
                 plt.close()
                 del fig
         else:
-            fig = globals()[args.plot_type](cluster)
+            print(args.plot_type)
+            f = globals()[args.plot_type]
+            print(f)
+            fig = f(cluster)
+            print(fig)
             p = os.path.join(args.output, f"cluster_{k}", f"{args.plot_type}.png")
             if os.path.exists(p):
                 log.info("skipping existing %s", p)

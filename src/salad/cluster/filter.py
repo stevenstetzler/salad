@@ -45,13 +45,17 @@ def main():
             cluster = clusters[i]
             if filter_n(cluster, args.min_points):
                 filtered_points[i] = cluster
+    else:
+        filtered_points = {i: clusters[i] for i in clusters}
 
-    filtered_velocity = {}                
+    filtered_velocity = {}
     if args.velocity:
         for i in clusters:
             cluster = clusters[i]
             if filter_velocity(cluster, vmin=min(args.velocity), vmax=max(args.velocity)):
                 filtered_velocity[i] = cluster
+    else:
+        filtered_velocity = {i: clusters[i] for i in clusters}
 
     filtered = {
         i: clusters[i]

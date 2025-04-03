@@ -30,7 +30,7 @@ def vote_points(hough: np.ndarray, X: np.ndarray, b: np.ndarray, x_min, y_min, d
                     hough[b_idx, x_idx, y_idx] += coef
 
 @numba.njit(parallel=True)             
-def vote_bins(hough: np.ndarray, bins: np.ndarray, coef: np.float64=1):
+def vote_bins(hough: np.ndarray, bins: np.ndarray, values: np.ndarray, coef: np.float64=1):
     """
     Given pre-binned detections vote in the hough space
     """
@@ -41,16 +41,16 @@ def vote_bins(hough: np.ndarray, bins: np.ndarray, coef: np.float64=1):
                 x_idx = bins[b_idx, i, 0] # bin location for that point
                 y_idx = bins[b_idx, i, 1]
                 if x_idx < hough.shape[1] and y_idx < hough.shape[2]:
-                    hough[b_idx, x_idx, y_idx] += coef
+                    hough[b_idx, x_idx, y_idx] += values[i] * coef
 
 @numba.njit(parallel=True)
 def transform_to_xy_prime(X: np.ndarray, b: np.ndarray, reference_time: np.float64):
     num_b = b.shape[0]
-    n = X.shape[0]
+    n = X.shape[0] # n x d where d is (ra, dec, time, +)
     M = np.zeros((num_b, n, 2))
     for i in numba.prange(num_b):
         for j in range(n):
-            M[i, j] = xyz_to_xy_prime(X[j], b[i], reference_time)
+            M[i, j] = xyz_to_xy_prime(X[j, 0:3], b[i], reference_time)
     return M
 
 @numba.njit(parallel=True)

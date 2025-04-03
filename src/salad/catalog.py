@@ -33,17 +33,22 @@ class DetectionCatalog(Serializable):
                 
         return _get
 
-
     ra = property(_column_factory("ra"))
     dec = property(_column_factory("dec"))
     peakValue = property(_column_factory("peakValue"))
     significance = property(_column_factory("significance"))
+    log_likelihood = property(_column_factory("log_likelihood"))
+    psi = property(_column_factory("psi"))
+    phi = property(_column_factory("phi"))
     i_x = property(_column_factory("i_x"))
     i_y = property(_column_factory("i_y"))
     times = property(_column_factory("times"))
     exposures = property(_column_factory("exposures"))
     detectors = property(_column_factory("detectors"))
     mask_summary = property(_column_factory("mask_summary"))
+    sigma_x = property(_column_factory("sigma_x"))
+    flux = property(_column_factory("flux"))
+    flux_sigma = property(_column_factory("flux_sigma"))
 
     @property
     def size(self):
@@ -82,9 +87,15 @@ class MultiEpochDetectionCatalog(Serializable):
     dec = property(_column_factory("dec"))
     peakValue = property(_column_factory("peakValue"))
     significance = property(_column_factory("significance"))
+    log_likelihood = property(_column_factory("log_likelihood"))
+    psi = property(_column_factory("psi"))
+    phi = property(_column_factory("phi"))
     i_x = property(_column_factory("i_x"))
     i_y = property(_column_factory("i_y"))
     mask_summary = property(_column_factory("mask_summary"))
+    sigma_x = property(_column_factory("sigma_x"))
+    flux = property(_column_factory("flux"))
+    flux_sigma = property(_column_factory("flux_sigma"))
 
     # @property
     # def time(self):
@@ -114,6 +125,32 @@ class MultiEpochDetectionCatalog(Serializable):
         
         xs = [np.hstack(x) for x in xs]
         return np.array(xs).T
+
+    def to_table(self, columns=None, sky_units=u.deg, time_units=u.day):
+        if columns is None:
+            columns = [
+                'ra', 'dec', 'sigma_x',
+                'flux', 'flux_sigma', 'significance',
+                'time', 
+                'exposure', 'detector', 
+                'peakValue',
+                'psi', 'phi',
+                'i_x', 'i_y',
+            ]
+
+        t = []
+        for c in columns:
+            d = getattr(self, c)
+            if c in ["ra", "dec"]:
+                d = d.to(sky_units)
+            elif c == "time":
+                d = d.to(time_units)
+            t.append(d)
+
+        t = astropy.table.Table(t)
+        t.rename_columns(['times'], ['time'])
+        return t
+
 
     def __reduce__(self):
         return type(self), (

@@ -69,6 +69,7 @@ def main():
         v, phi,
         dx, dt,
     )
+    print(directions.b, file=sys.stderr)
     if args.reference_time is None:
         args.reference_time = catalog.X(columns=[args.time_column]).min()
     

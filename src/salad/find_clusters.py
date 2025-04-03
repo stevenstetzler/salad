@@ -13,6 +13,7 @@ def main():
     parser.add_argument("input", nargs="?", type=argparse.FileType('rb'), default=sys.stdin)
     parser.add_argument('output', nargs='?', type=argparse.FileType('wb'), default=sys.stdout)
     parser.add_argument("--threshold", type=int, required=True)
+    parser.add_argument("--threshold-type", type=str, default="votes")
 
     args = parser.parse_args()
 
@@ -23,7 +24,9 @@ def main():
     # points = hough.projection.X.copy()
     for i, cluster in enumerate(hough):
         votes = cluster.extra['votes']
-        if votes < args.threshold:
+        if args.threshold_type == 'votes' and votes < args.threshold:
+            break
+        if args.threshold_type == 'clusters' and len(clusters) > args.threshold:
             break
         clusters[i] = cluster
     write(clusters, args.output)

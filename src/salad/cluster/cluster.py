@@ -8,7 +8,7 @@ class Cluster(object):
     points = None
     line = None
     cutouts = None
-    extra = None
+    extra = {}
     summary = None
     
     def __init__(self, **kwargs):

@@ -24,7 +24,7 @@ class Serializable():
             file = sys.stdout.buffer
 
         log.debug("writing to %s", file)
-        if type(file) is str:
+        if isinstance(file, str) or isinstance(file, Path):
             with open(file, "wb") as fd:
                 pickle.dump(self, fd)
         else:

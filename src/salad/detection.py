@@ -8,6 +8,7 @@ import sys
 from joblib import Parallel, delayed
 import logging
 import numpy as np
+from .measure.forced import forced_exposures
 from .catalog import DetectionCatalog, MultiEpochDetectionCatalog
 from .serialize import read
 from .images import Image
@@ -19,15 +20,20 @@ from .images import Image
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
-def detect(image : Image, threshold=3, no_masks=False):
+def detect(image : Image, threshold=3, no_masks=False, polarity="positive"):
     logging.basicConfig()
     log = logging.getLogger(__name__)
 
     if isinstance(image, Image):
         exposure = image.exposure
+        bbox = image.reader.readBBox()
+        psf = image.reader.readPsf()
     else:
         exposure = image
-        
+        psf = image.psf
+        bbox = image.bbox
+    a = psf.computeShape(bbox.getCenter()).getDeterminantRadius() * image.reader.readMetadata()['PIXSCAL1']
+
     config = detection.SourceDetectionConfig()
     if no_masks:
         config.excludeMaskPlanes = []
@@ -43,6 +49,7 @@ def detect(image : Image, threshold=3, no_masks=False):
             "NOT_DEBLENDED" # ? seems to cause noise
         ]
     config.thresholdValue = threshold
+    config.reEstimateBackground = False
     task = detection.SourceDetectionTask(config=config)
 
     exposure_date = exposure.visitInfo.getDate()
@@ -56,8 +63,7 @@ def detect(image : Image, threshold=3, no_masks=False):
     results = task.run(table, exposure)
     t3 = time()
 
-    footprintSet = results.positive
-    footprints = footprintSet.getFootprints()
+    footprints = getattr(results, polarity).getFootprints()
     peaks = []
     for footprint in footprints:
         peaks.append(footprint.peaks.asAstropy())
@@ -69,6 +75,20 @@ def detect(image : Image, threshold=3, no_masks=False):
     peaks['ra'] = ra * u.radian
     peaks['dec'] = dec * u.radian
     t5 = time()
+
+    forced = forced_exposures([exposure for i in range(len(peaks))], peaks)
+    peaks = astropy.table.join(peaks, forced, keys_left=['i_x', 'i_y'], keys_right=['forced_i_x', 'forced_i_y'])
+    peaks['sigma_x'] = astropy.table.Column(2 * (a / peaks['significance'])**2 * u.arcsec, description="positional uncertainty")
+    peaks.rename_columns(['forced_logL'], ['log_likelihood'])
+    peaks.rename_columns(['forced_c'], ['psi'])
+    peaks.rename_columns(['forced_a'], ['phi'])
+    peaks.rename_columns(['forced_SNR'], ['snr'])
+    peaks.rename_columns(['forced_flux'], ['flux'])
+    peaks.rename_columns(['forced_sigma'], ['flux_sigma'])
+    peaks.remove_columns(['forced_exposure', 'forced_time', 'forced_detector', 'forced_i_x', 'forced_i_y'])
+    peaks.sort("id")
+    
+    t6 = time()
 
     masked = np.zeros(exposure.mask.array.shape)
     masked_pixel_summary = {
@@ -82,12 +102,13 @@ def detect(image : Image, threshold=3, no_masks=False):
         masked += bit_mask
 
     masked_pixel_summary['masked'] = (masked > 0).sum()
-    t6 = time()
+    t7 = time()
 
     log.info("run: %s", t3 - t2)
     log.info("astropy: %s", t4 - t3)
     log.info("ra/dec: %s", t5 - t4)
-    log.info("masks: %s", t6 - t5)
+    log.info("forced: %s", t6 - t5)
+    log.info("masks: %s", t7 - t6)
     log.info("found %s detections", len(peaks))
 
     return DetectionCatalog(peaks, exposure_date_jd, exposure.visitInfo.getId(), exposure.detector.getId(), masked_pixel_summary)
