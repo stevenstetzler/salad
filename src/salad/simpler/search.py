@@ -8,6 +8,7 @@ from .postprocess import refine, gather
 import astropy.units as u
 from pathlib import Path
 import logging
+from joblib import Parallel, delayed
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -24,7 +25,8 @@ def search_gpu(X, directions, dx, reference_time, num_results=10):
     num_x = int((x_max - x_min) / _dx  + 1)
     num_y = int((y_max - y_min) / _dy  + 1)
 
-    hough = np.zeros((num_dir, num_x, num_y), dtype=np.int32)    
+    log.info("creating hough space with shape (%d, %d, %d)", num_dir, num_x, num_y)
+    hough = np.zeros((num_dir, num_x, num_y), dtype=np.int32)
 
     num_dir, num_x, num_y = hough.shape
     
@@ -157,9 +159,8 @@ def search(X, directions, dx, reference_time, num_results=10, precompute=False, 
     num_x = int((x_max - x_min) / _dx  + 1)
     num_y = int((y_max - y_min) / _dy  + 1)
 
+    log.info("creating hough space with shape (%d, %d, %d)", num_dir, num_x, num_y)
     hough = np.zeros((num_dir, num_x, num_y), dtype=np.uint32)    
-
-    num_dir, num_x, num_y = hough.shape
     
     if precompute:
         bins = make_bins(X, directions.b, x_min, y_min, _dx, _dy, reference_time)
@@ -192,19 +193,19 @@ def main():
     if args.gpu and args.device > -1:
         cuda.select_device(args.device)
     
-    # images = read(args.images)
-    # psfs = []
-    # for image in images:
-    #     bbox = image.reader.readBBox()
-    #     psf = image.reader.readPsf()
-    #     psfs.append(psf.computeShape(bbox.getCenter()).getDeterminantRadius())
+    images = read(args.images)
+    psfs = []
+    for image in images:
+        bbox = image.reader.readBBox()
+        psf = image.reader.readPsf()
+        psfs.append(psf.computeShape(bbox.getCenter()).getDeterminantRadius())
+    
+    pixel_scale = (0.263 * u.arcsec / u.pixel)
+    psfs = np.array(psfs) * u.pixel * pixel_scale
+    log.info("seeing [min, median, max]: [%f, %f, %f]", np.min(psfs).value, np.median(psfs).value, np.max(psfs).value)
 
-    # pixel_scale = (0.263 * u.arcsec / u.pixel)
-    # psfs = np.array(psfs) * u.pixel * pixel_scale
-    # log.info("seeing: [%f, %f, %f]", np.min(psfs).value, np.median(psfs).value, np.max(psfs).value)
-
-    # dx = args.dx * np.median(psfs)
-    dx = args.dx * u.arcsec
+    dx = args.dx * np.median(psfs)
+    # dx = args.dx * u.arcsec
     log.info(f"using dx = {dx}")
     catalog = astropy.table.Table.read(args.catalog)
 
@@ -217,6 +218,7 @@ def main():
     phimax = args.angle[1] * u.deg
 
     directions = SearchDirections([vmin, vmax], [phimin, phimax], dx, dt)
+    log.info("searching %d directions", len(directions.b))
     if args.gpu_kernels:
         results, results_points = search_gpu(X, directions, dx, reference_epoch, num_results=args.threshold)
     else:
@@ -230,6 +232,17 @@ def main():
         d = args.results_dir / str(i)
         d.mkdir(parents=True, exist_ok=True)
         r = refined['result']
+        astropy.table.Table(
+            [
+                {
+                    "x": result[0],
+                    "y": result[1],
+                    "direction": result[2],
+                    "n": result[3],
+                }
+            ]
+        ).write(d / "result.ecsv", format="ascii.ecsv")
+
         astropy.table.Table(
             [
                 {
