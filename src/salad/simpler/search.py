@@ -227,8 +227,12 @@ def main():
     args.results_dir.mkdir(parents=True, exist_ok=False)
     for i, (result, points) in enumerate(zip(results, results_points)):
         # refine
-        refined = refine(points)
-        gathered = gather(refined['result'], X[:, 0], X[:, 1], X[:, 2], 1/3600)
+        try:
+            refined = refine(points)
+            gathered = gather(refined['result'], X[:, 0], X[:, 1], X[:, 2], 1/3600)
+        except Exception as e:
+            log.error(str(e))
+            continue
         d = args.results_dir / str(i)
         d.mkdir(parents=True, exist_ok=True)
         r = refined['result']
