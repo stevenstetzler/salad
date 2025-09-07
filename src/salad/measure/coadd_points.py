@@ -1,4 +1,4 @@
-from ..serialize import read, write
+from ..io.serialize import read, write
 import logging
 
 logging.basicConfig()
@@ -16,10 +16,6 @@ def coadd(cutouts, coadd_type="nanmean"):
 def main():
     import argparse
     import sys
-    import astropy.time
-    import numpy as np
-    import astropy.units as u
-    import lsst.geom
 
     parser = argparse.ArgumentParser()
     parser.add_argument("input", nargs='?', type=argparse.FileType('rb'), default=sys.stdin)

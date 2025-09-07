@@ -1,4 +1,4 @@
-from ..serialize import read, write
+from ..io.serialize import read, write
 import logging
 from .forced import forced_exposures
 
@@ -50,7 +50,7 @@ def main():
 
     cluster = read(args.input)
     images = read(args.images)
-    images = [image for image in images]
+    images = list(images.values())
     exposures = []
     times = []
     cutouts = []

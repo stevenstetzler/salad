@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
-from ..serialize import read, write
+from ..io.serialize import read, write
 
 logging.basicConfig()
 log = logging.getLogger(__name__)

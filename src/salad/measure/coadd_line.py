@@ -1,4 +1,4 @@
-from ..serialize import read, write
+from ..io.serialize import read, write
 import logging
 
 logging.basicConfig()
@@ -30,7 +30,7 @@ def main():
 
     cluster = read(args.input)
     images = read(args.images)
-    images = [image for image in images]
+    images = list(images.values())
     times = []
     cutouts = []
     for image in images:
